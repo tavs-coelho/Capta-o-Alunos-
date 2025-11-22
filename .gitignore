@@ -3,3 +3,4 @@ node_modules/
 *.log
 .DS_Store
 anuncio_gerado*.png
+auth_info_baileys/
