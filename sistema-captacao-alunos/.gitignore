@@ -1,0 +1,11 @@
+# WhatsApp Auth Session
+auth_info/
+
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+*.log
