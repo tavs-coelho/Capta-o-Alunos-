@@ -4,6 +4,9 @@ const axios = require('axios');
 
 console.log('[MARKETING] Iniciando módulo de Marketing...');
 
+const cron = require('node-cron');
+const axios = require('axios');
+
 // Calendário acadêmico com as provas programadas
 const calendarioAcademico = [
   {
@@ -35,6 +38,7 @@ async function postToFacebookAds(campaignName) {
   // return response.data;
   
   console.log(`[MARKETING] 🚀 [Facebook Ads API] Campanha "${campaignName}" seria criada aqui`);
+  console.log(`[Facebook Ads API] Campanha "${campaignName}" seria criada aqui`);
 }
 
 // Função para verificar provas que estão a 3 dias de acontecer
@@ -52,6 +56,7 @@ function verificarProvasProximas() {
     // Verifica se a prova é exatamente daqui a 3 dias
     if (dataProva.getTime() === daquiTresDias.getTime()) {
       console.log(`[MARKETING] 🚀 DISPARANDO ANÚNCIO NO FACEBOOK ADS: ${prova.nome} chegando! Estude agora.`);
+      console.log(`🚀 DISPARANDO ANÚNCIO NO FACEBOOK ADS: ${prova.nome} chegando! Estude agora.`);
       
       // Chama a função placeholder para simular envio ao Facebook Ads
       postToFacebookAds(`Campanha: ${prova.nome}`);
@@ -130,3 +135,12 @@ module.exports = {
     postToFacebookAds,
     verificarProvasProximas
 };
+// Agendar tarefa cron para rodar a cada 10 segundos (para fins de teste)
+console.log('📅 Sistema de Marketing Automático iniciado!');
+console.log('⏰ Verificando calendário acadêmico a cada 10 segundos...\n');
+
+cron.schedule('*/10 * * * * *', () => {
+  const agora = new Date().toLocaleString('pt-BR');
+  console.log(`[${agora}] Verificando provas próximas...`);
+  verificarProvasProximas();
+});
