@@ -50,6 +50,9 @@ async function gerarRespostaIA(mensagemUsuario) {
     } catch (error) {
         console.error('[BOT] ❌ Erro ao gerar resposta da IA:', error.message);
         return 'Desculpe, estou com dificuldades técnicas no momento. Por favor, tente novamente em instantes. 🙏';
+    }
+}
+
 const fs = require('fs');
 
 function salvarLead(numero, mensagemInicial) {
