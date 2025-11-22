@@ -42,7 +42,7 @@ async function gerarRespostaIA(mensagemUsuario) {
         }
         
         const messageContent = completion.choices[0]?.message?.content;
-        if (!messageContent) {
+        if (!messageContent || messageContent.trim() === '') {
             throw new Error('Invalid message content from OpenAI API');
         }
         
