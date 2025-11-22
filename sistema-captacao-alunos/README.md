@@ -6,6 +6,7 @@ Sistema integrado que combina um bot de WhatsApp para atendimento automático e 
 
 - Node.js (versão 14 ou superior)
 - npm ou yarn
+- Chave de API da OpenAI (para respostas inteligentes com IA)
 
 ## 🚀 Instalação
 
@@ -35,10 +36,16 @@ Script de automação de marketing que monitora o calendário acadêmico e dispa
 npm install
 ```
 
-2. (Opcional) Configure o arquivo `.env` para variáveis de ambiente:
+2. Configure o arquivo `.env` com sua chave de API da OpenAI:
 ```bash
 cp .env.example .env
+# Edite o arquivo .env e adicione sua chave da OpenAI
 ```
+
+Para obter sua chave de API:
+- Acesse https://platform.openai.com/api-keys
+- Crie uma nova chave de API
+- Copie e cole no arquivo `.env`
 
 ## 💻 Como Executar
 
@@ -55,18 +62,21 @@ node index.js
 ## 📦 Módulos
 
 ### Bot de WhatsApp (`bot.js`)
-Bot inteligente de atendimento automático via WhatsApp.
+Bot inteligente de atendimento automático via WhatsApp com IA integrada.
 
 **Características:**
 - Conecta-se ao WhatsApp usando Baileys
 - Gera QR Code para autenticação
-- Responde automaticamente a mensagens com base em palavras-chave:
-  - **Saudações**: "olá", "oi" → Mensagem de boas-vindas
-  - **Preços**: "preço", "valor", "quanto" → Informações sobre preços
-  - **Matérias**: "matemática", "física", "cálculo" → Informações sobre especialização
-  - **Agendamento**: "agendar" → Verificação de agenda
+- **🤖 Respostas com IA (OpenAI GPT-4o-mini)**: 
+  - Assistente comercial inteligente que entende o contexto
+  - Personalidade simpática e focada em agendar aulas
+  - Informações sobre preço base (R$ 60/hora)
+  - Uso moderado de emojis
+  - Respostas curtas e diretas
+  - Verifica datas de provas quando solicitado
 - Logs prefixados com `[BOT]`
 - Reconexão automática com delay de 3 segundos
+- Tratamento de erros robusto
 
 ### Sistema de Marketing (`marketing.js`)
 Sistema automatizado de marketing com múltiplas funcionalidades.
@@ -292,6 +302,41 @@ sistema-captacao-alunos/
 └── .gitignore          # Arquivos ignorados
 ```
 
+## 🤖 Integração com OpenAI
+
+O bot agora usa a OpenAI GPT-4o-mini para gerar respostas inteligentes e contextuais.
+
+### Configuração
+
+1. Instale a biblioteca openai (já incluída nas dependências):
+```bash
+npm install openai
+```
+
+2. Configure a variável de ambiente no `.env`:
+```
+OPENAI_API_KEY=sua_chave_api_openai_aqui
+```
+
+### Como Funciona
+
+- **Função `gerarRespostaIA(mensagemUsuario)`**: Envia mensagens do usuário para o modelo GPT-4o-mini
+- **System Prompt**: Define o comportamento do assistente como um vendedor simpático de aulas particulares
+- **Modelo**: gpt-4o-mini (pode ser alterado para gpt-3.5-turbo se necessário)
+- **Parâmetros**:
+  - `temperature`: 0.7 (equilíbrio entre criatividade e consistência)
+  - `max_tokens`: 200 (respostas curtas e diretas)
+
+### Vantagens da IA
+
+- ✅ Respostas mais naturais e contextuais
+- ✅ Entende a intenção do usuário sem depender de palavras-chave específicas
+- ✅ Personalidade consistente focada em vendas
+- ✅ Adaptável a diferentes tipos de perguntas
+- ✅ Tratamento de erros com mensagem amigável
+
 ## Segurança
 
 A pasta `auth_info/` contém informações sensíveis de autenticação e está configurada no `.gitignore` para não ser versionada.
+
+⚠️ **Importante**: Nunca compartilhe ou commite sua chave de API da OpenAI (`OPENAI_API_KEY`). Mantenha-a apenas no arquivo `.env`.

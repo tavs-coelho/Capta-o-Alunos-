@@ -2,6 +2,54 @@ require('dotenv').config();
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
+const OpenAI = require('openai');
+
+// Configuração da OpenAI
+if (!process.env.OPENAI_API_KEY) {
+    console.error('[BOT] ❌ ERRO: OPENAI_API_KEY não encontrada no arquivo .env');
+    console.error('[BOT] Por favor, configure sua chave de API da OpenAI no arquivo .env');
+    process.exit(1);
+}
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
+
+// Prompt do sistema para o assistente de IA
+const SYSTEM_PROMPT = 'Você é o assistente comercial de um professor particular de Exatas e Programação. Seu objetivo é ser simpático, entender a dor do aluno e agendar uma aula. O preço base é R$ 60/hora. Nunca dê respostas muito longas. Use emojis moderados. Se o aluno perguntar datas de provas, diga que vai verificar.';
+
+// Função para gerar resposta usando IA
+async function gerarRespostaIA(mensagemUsuario) {
+    try {
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: SYSTEM_PROMPT
+                },
+                {
+                    role: 'user',
+                    content: mensagemUsuario
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 200
+        });
+
+        if (!completion.choices || completion.choices.length === 0) {
+            throw new Error('Empty response from OpenAI API');
+        }
+        
+        const messageContent = completion.choices[0]?.message?.content;
+        if (!messageContent || messageContent.trim() === '') {
+            throw new Error('Invalid message content from OpenAI API');
+        }
+        
+        return messageContent;
+    } catch (error) {
+        console.error('[BOT] ❌ Erro ao gerar resposta da IA:', error.message);
+        return 'Desculpe, estou com dificuldades técnicas no momento. Por favor, tente novamente em instantes. 🙏';
 const fs = require('fs');
 
 function salvarLead(numero, mensagemInicial) {
@@ -88,7 +136,6 @@ async function connectToWhatsApp() {
         
         if (!messageText) return;
         
-        const lowerText = messageText.toLowerCase();
         const from = msg.key.remoteJid;
         
         // Salvar lead (a função verifica internamente se o número já existe)
@@ -98,35 +145,13 @@ async function connectToWhatsApp() {
         console.log(`[BOT] 📱 Mensagem de ${from}:`);
         console.log(`[BOT]    Conteúdo: ${messageText}`);
         
-        let response = null;
-        
-        // Verifica saudações
-        if (lowerText.includes('olá') || lowerText.includes('oi') || lowerText.includes('ola')) {
-            response = '👋 Olá! Bem-vindo ao sistema de captação de alunos. Como posso ajudar?';
-        }
-        // Verifica consultas de preço
-        else if (lowerText.includes('preço') || lowerText.includes('preco') || lowerText.includes('valor') || lowerText.includes('quanto')) {
-            response = 'Olá! A hora/aula é R$ 60. Temos pacotes mensais. Qual matéria você precisa?';
-        }
-        // Verifica consultas sobre matérias
-        else if (lowerText.includes('matemática') || lowerText.includes('matematica') || 
-                 lowerText.includes('física') || lowerText.includes('fisica') || 
-                 lowerText.includes('cálculo') || lowerText.includes('calculo')) {
-            response = 'Eu sou especialista nisso. Você tem alguma prova chegando? Qual a data?';
-        }
-        // Verifica solicitações de agendamento
-        else if (lowerText.includes('agendar')) {
-            response = 'Vou verificar minha agenda e te retorno em instantes.';
-        }
-        
-        // Envia resposta se houver
-        if (response) {
-            try {
-                await sock.sendMessage(from, { text: response });
-                console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
-            } catch (error) {
-                console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
-            }
+        // Gera resposta usando IA
+        try {
+            const response = await gerarRespostaIA(messageText);
+            await sock.sendMessage(from, { text: response });
+            console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
+        } catch (error) {
+            console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
         }
     });
 
