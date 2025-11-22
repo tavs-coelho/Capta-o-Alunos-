@@ -28,8 +28,9 @@ async function testarModulo() {
     // Teste 2: Testar listarHorariosLivres (requer credentials.json)
     console.log('Teste 2: Listando horários livres...');
     try {
-        const dataAmanha = new Date();
-        dataAmanha.setDate(dataAmanha.getDate() + 1);
+        // Calcula data de amanhã de forma robusta
+        const hoje = new Date();
+        const dataAmanha = new Date(hoje.getTime() + 24 * 60 * 60 * 1000);
         const dataStr = dataAmanha.toISOString().split('T')[0]; // YYYY-MM-DD
         
         console.log(`📅 Buscando horários para: ${dataStr}`);

@@ -15,6 +15,7 @@ const CREDENTIALS_PATH = path.join(__dirname, 'credentials.json');
 const HORARIO_INICIO = 8; // 08:00
 const HORARIO_FIM = 18;   // 18:00
 const DURACAO_SLOT = 60;  // 1 hora em minutos
+const TIMEZONE = 'America/Sao_Paulo'; // Fuso horário padrão
 
 /**
  * Carrega e configura a autenticação com Google Calendar
@@ -52,8 +53,9 @@ async function getAuthenticatedClient() {
                 redirect_uris[0]
             );
 
-            // TODO: Implementar fluxo completo de OAuth2 com token refresh
-            // Por enquanto, assumimos que o token já está configurado via variáveis de ambiente
+            // OAuth2 requer tokens de acesso configurados via variáveis de ambiente
+            // Para implementação completa com fluxo de autorização, consulte:
+            // https://developers.google.com/calendar/api/quickstart/nodejs
             if (process.env.GOOGLE_ACCESS_TOKEN) {
                 oAuth2Client.setCredentials({
                     access_token: process.env.GOOGLE_ACCESS_TOKEN,
@@ -90,8 +92,9 @@ async function listarHorariosLivres(dia) {
         const calendar = google.calendar({ version: 'v3', auth });
 
         // Define o intervalo do dia (08:00 às 18:00)
-        const dataInicio = new Date(`${dia}T${HORARIO_INICIO.toString().padStart(2, '0')}:00:00`);
-        const dataFim = new Date(`${dia}T${HORARIO_FIM.toString().padStart(2, '0')}:00:00`);
+        // Usando formato ISO 8601 completo para consistência
+        const dataInicio = new Date(`${dia}T${HORARIO_INICIO.toString().padStart(2, '0')}:00:00-03:00`);
+        const dataFim = new Date(`${dia}T${HORARIO_FIM.toString().padStart(2, '0')}:00:00-03:00`);
 
         // Busca eventos do dia no calendário 'primary'
         const response = await calendar.events.list({
@@ -113,8 +116,8 @@ async function listarHorariosLivres(dia) {
             const horaInicio = HORARIO_INICIO + i;
             const horaFim = horaInicio + 1;
 
-            const slotInicio = new Date(`${dia}T${horaInicio.toString().padStart(2, '0')}:00:00`);
-            const slotFim = new Date(`${dia}T${horaFim.toString().padStart(2, '0')}:00:00`);
+            const slotInicio = new Date(`${dia}T${horaInicio.toString().padStart(2, '0')}:00:00-03:00`);
+            const slotFim = new Date(`${dia}T${horaFim.toString().padStart(2, '0')}:00:00-03:00`);
 
             // Verifica se o slot está livre (não conflita com nenhum evento)
             const slotLivre = !eventos.some(evento => {
@@ -172,11 +175,11 @@ async function criarEventoAula(nomeAluno, dataInicio) {
             description: 'Agendado via Bot WhatsApp',
             start: {
                 dateTime: dataInicioObj.toISOString(),
-                timeZone: 'America/Sao_Paulo'
+                timeZone: TIMEZONE
             },
             end: {
                 dateTime: dataFimObj.toISOString(),
-                timeZone: 'America/Sao_Paulo'
+                timeZone: TIMEZONE
             },
             conferenceData: {
                 createRequest: {
