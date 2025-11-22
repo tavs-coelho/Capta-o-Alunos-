@@ -91,6 +91,30 @@ Sistema automatizado de marketing com múltiplas funcionalidades.
 - 🔍 **Verificação de Provas**: A cada 10 segundos (configurável)
 - Logs prefixados com `[MARKETING]`
 
+### Painel Admin (`server.js`)
+Servidor Express com interface web para visualização e gerenciamento de leads.
+
+**Características:**
+- 🖥️ **Interface Web**: Painel visual moderno e responsivo
+- 🔐 **Basic Auth**: Autenticação simples com usuário e senha
+- 📊 **Dashboard**: Estatísticas de leads (Total, Novos, Fechados)
+- 📋 **Tabela de Leads**: Visualização completa dos leads cadastrados
+  - Nome (Número do WhatsApp)
+  - Data de contato
+  - Status (Novo/Fechado)
+  - Última mensagem recebida
+- 💬 **Link para WhatsApp**: Botão para abrir conversa direta (wa.me/numero)
+- 🎨 **Design Moderno**: Interface com gradientes e animações
+- 📱 **Responsivo**: Funciona em desktop e mobile
+- Logs prefixados com `[SERVER]`
+
+**Credenciais de Acesso:**
+- Usuário: `admin`
+- Senha: `admin123`
+
+**URL de Acesso:**
+- http://localhost:3000/admin
+
 ## 📝 Estrutura do Projeto
 
 ```
@@ -98,6 +122,10 @@ sistema-captacao-alunos/
 ├── index.js          # Script principal que importa e executa os módulos
 ├── bot.js            # Bot de WhatsApp
 ├── marketing.js      # Sistema de marketing e automação
+├── server.js         # Servidor Express com painel admin
+├── views/
+│   └── admin.ejs     # Template da interface do painel admin
+├── leads.json        # Arquivo com dados dos leads (gerado automaticamente)
 ├── package.json      # Dependências e scripts
 ├── .gitignore        # Arquivos ignorados pelo git
 └── .env              # Variáveis de ambiente (não commitado)
@@ -105,18 +133,20 @@ sistema-captacao-alunos/
 
 ## 🔧 Como Funciona
 
-O script `index.js` importa e executa ambos os módulos (`bot.js` e `marketing.js`) simultaneamente:
+O script `index.js` importa e executa todos os módulos (`bot.js`, `marketing.js` e `server.js`) simultaneamente:
 
 - Usa `require()` para importar os módulos
-- Ambos os módulos inicializam automaticamente ao serem importados
-- Os logs de ambos aparecem no mesmo terminal
+- Todos os módulos inicializam automaticamente ao serem importados
+- Os logs de todos aparecem no mesmo terminal
 - Cada módulo tem seu próprio prefixo de log para fácil identificação
+- O servidor Express roda em paralelo com a conexão do Baileys
 
 ## 📊 Logs
 
 Todos os logs aparecem no terminal com prefixos identificadores:
 - `[BOT]` - Logs do WhatsApp Bot
 - `[MARKETING]` - Logs do sistema de Marketing
+- `[SERVER]` - Logs do servidor Express
 
 ## 🎯 Funcionalidades de Marketing
 

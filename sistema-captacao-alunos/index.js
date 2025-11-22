@@ -24,13 +24,18 @@ try {
     require('./marketing.js');
     console.log('');
     
+    // Importar server.js - inicia o servidor Express
+    require('./server.js');
+    console.log('');
+    
     console.log('='.repeat(60));
     console.log('✓ Todos os módulos foram carregados com sucesso!');
     console.log('='.repeat(60));
     console.log('');
-    console.log('💡 Os logs de ambos os módulos aparecerão abaixo:');
+    console.log('💡 Os logs de todos os módulos aparecerão abaixo:');
     console.log('   [BOT] - Logs do WhatsApp Bot');
     console.log('   [MARKETING] - Logs do sistema de Marketing');
+    console.log('   [SERVER] - Logs do servidor Express');
     console.log('');
     
 } catch (error) {

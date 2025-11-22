@@ -1,0 +1,20 @@
+[
+  {
+    "id": "5511999999999@s.whatsapp.net",
+    "data": "2025-11-22T15:30:00.000Z",
+    "interesse": "Olá, preciso de aulas de Cálculo I para uma prova na próxima semana",
+    "status": "novo"
+  },
+  {
+    "id": "5511988888888@s.whatsapp.net",
+    "data": "2025-11-21T10:15:00.000Z",
+    "interesse": "Boa tarde! Gostaria de saber os valores das aulas de Física",
+    "status": "novo"
+  },
+  {
+    "id": "5511977777777@s.whatsapp.net",
+    "data": "2025-11-20T14:45:00.000Z",
+    "interesse": "Preciso de ajuda em Algoritmos e Programação",
+    "status": "fechado"
+  }
+]
