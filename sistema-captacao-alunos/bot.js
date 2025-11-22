@@ -105,17 +105,6 @@ async function getAIResponse(userMessage, estado) {
     }
 }
 
-// Configuração da OpenAI
-if (!process.env.OPENAI_API_KEY) {
-    console.error('[BOT] ❌ ERRO: OPENAI_API_KEY não encontrada no arquivo .env');
-    console.error('[BOT] Por favor, configure sua chave de API da OpenAI no arquivo .env');
-    process.exit(1);
-}
-
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
-
 // Prompt do sistema para o assistente de IA
 const SYSTEM_PROMPT = 'Você é o assistente comercial de um professor particular de Exatas e Programação. Seu objetivo é ser simpático, entender a dor do aluno e agendar uma aula. O preço base é R$ 60/hora. Nunca dê respostas muito longas. Use emojis moderados. Se o aluno perguntar datas de provas, diga que vai verificar.';
 
@@ -177,7 +166,6 @@ async function gerarRespostaIA(mensagemUsuario) {
     }
 }
 
-const fs = require('fs');
 const { PIX } = require('gpix/dist');
 
 function gerarCobrancaPix(valor) {
@@ -297,7 +285,6 @@ async function connectToWhatsApp() {
             }
         });
 
-
         sock.ev.on('messages.upsert', async ({ messages }) => {
             if (!messages || messages.length === 0) return;
             
@@ -341,112 +328,38 @@ async function connectToWhatsApp() {
             console.log(`[BOT] 📱 Mensagem de ${from}:`);
             console.log(`[BOT]    Conteúdo: ${messageText}`);
             
-            // Gera resposta usando IA
+            // Verifica se o usuário já tem um estado. Se não, define como 'INICIO'
+            if (!userStates[from]) {
+                userStates[from] = 'INICIO';
+                console.log(`[BOT]    🆕 Novo usuário! Estado inicial: INICIO`);
+            }
+            
+            const currentState = userStates[from];
+            console.log(`[BOT]    📊 Estado atual: ${currentState}`);
+            
             try {
-                const response = await gerarRespostaIA(messageText);
-                await sock.sendMessage(from, { text: response });
-                console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
+                // Obtém resposta da IA com contexto de estado
+                const aiResponse = await getAIResponse(messageText, currentState);
+                
+                // Atualiza o estado do usuário
+                userStates[from] = aiResponse.novo_estado;
+                console.log(`[BOT]    🔄 Novo estado: ${aiResponse.novo_estado}`);
+                
+                // Envia a resposta
+                await sock.sendMessage(from, { text: aiResponse.texto });
+                console.log(`[BOT]    ✅ Resposta enviada: ${aiResponse.texto}`);
             } catch (error) {
-                console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
+                console.error(`[BOT]    ❌ Erro ao processar mensagem: ${error.message}`);
+                
+                // Fallback: resposta padrão em caso de erro
+                const fallbackResponse = 'Desculpe, tive um problema ao processar sua mensagem. Por favor, tente novamente.';
+                try {
+                    await sock.sendMessage(from, { text: fallbackResponse });
+                } catch (sendError) {
+                    console.error(`[BOT]    ❌ Erro ao enviar resposta de fallback: ${sendError.message}`);
+                }
             }
         });
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        if (!messages || messages.length === 0) return;
-        
-        const msg = messages[0];
-        
-        // Ignora mensagens enviadas por mim e que não sejam texto
-        if (!msg.message || msg.key.fromMe) return;
-        
-        const messageText = msg.message.conversation || 
-                           msg.message.extendedTextMessage?.text || 
-                           '';
-        
-        if (!messageText) return;
-        
-        const from = msg.key.remoteJid;
-        
-        // Salvar lead (a função verifica internamente se o número já existe)
-        salvarLead(from, messageText);
-        
-        // Console.log formatado
-        console.log(`[BOT] 📱 Mensagem de ${from}:`);
-        console.log(`[BOT]    Conteúdo: ${messageText}`);
-        
-        // Verifica se o usuário já tem um estado. Se não, define como 'INICIO'
-        if (!userStates[from]) {
-            userStates[from] = 'INICIO';
-            console.log(`[BOT]    🆕 Novo usuário! Estado inicial: INICIO`);
-        }
-        
-        const currentState = userStates[from];
-        console.log(`[BOT]    📊 Estado atual: ${currentState}`);
-        
-        try {
-            // Obtém resposta da IA com contexto de estado
-            const aiResponse = await getAIResponse(messageText, currentState);
-            
-            // Atualiza o estado do usuário
-            userStates[from] = aiResponse.novo_estado;
-            console.log(`[BOT]    🔄 Novo estado: ${aiResponse.novo_estado}`);
-            
-            // Envia a resposta
-            await sock.sendMessage(from, { text: aiResponse.texto });
-            console.log(`[BOT]    ✅ Resposta enviada: ${aiResponse.texto}`);
-        } catch (error) {
-            console.error(`[BOT]    ❌ Erro ao processar mensagem: ${error.message}`);
-            
-            // Fallback: resposta padrão em caso de erro
-            const fallbackResponse = 'Desculpe, tive um problema ao processar sua mensagem. Por favor, tente novamente.';
-            try {
-                await sock.sendMessage(from, { text: fallbackResponse });
-            } catch (sendError) {
-                console.error(`[BOT]    ❌ Erro ao enviar resposta de fallback: ${sendError.message}`);
-            }
-        const lowerText = messageText.toLowerCase();
-        
-        // Verifica solicitações de chave Pix (prioridade sobre IA)
-        if (lowerText.includes('qual a chave') || lowerText.includes('vou querer') || 
-            lowerText.includes('passa o pix') || lowerText.includes('passar o pix')) {
-            const codigoPix = gerarCobrancaPix(60);
-            
-            if (codigoPix) {
-                try {
-                    // Envia mensagem de confirmação
-                    await sock.sendMessage(from, { 
-                        text: 'Ótimo! Aqui está o código Pix para garantir o horário:' 
-                    });
-                    console.log(`[BOT]    ✅ Mensagem de confirmação enviada`);
-                    
-                    // Envia o código Pix em mensagem separada
-                    await sock.sendMessage(from, { text: codigoPix });
-                    console.log(`[BOT]    ✅ Código Pix enviado`);
-                } catch (error) {
-                    console.error(`[BOT]    ❌ Erro ao enviar código Pix: ${error.message}`);
-                }
-            } else {
-                // Envia mensagem de erro se não foi possível gerar o código
-                try {
-                    await sock.sendMessage(from, { 
-                        text: 'Desculpe, houve um erro ao gerar o código Pix. Por favor, tente novamente mais tarde ou entre em contato diretamente.' 
-                    });
-                    console.log(`[BOT]    ⚠️  Erro: não foi possível gerar código Pix`);
-                } catch (error) {
-                    console.error(`[BOT]    ❌ Erro ao enviar mensagem de erro: ${error.message}`);
-                }
-            }
-            return; // Retorna aqui para não executar o código de resposta IA abaixo
-        }
-        
-        // Gera resposta usando IA
-        try {
-            const response = await gerarRespostaIA(messageText);
-            await sock.sendMessage(from, { text: response });
-            console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
-        } catch (error) {
-            console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
-        }
-    });
 
         return sock;
     } catch (error) {
