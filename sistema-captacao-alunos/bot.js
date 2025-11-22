@@ -50,7 +50,27 @@ async function gerarRespostaIA(mensagemUsuario) {
     } catch (error) {
         console.error('[BOT] ❌ Erro ao gerar resposta da IA:', error.message);
         return 'Desculpe, estou com dificuldades técnicas no momento. Por favor, tente novamente em instantes. 🙏';
+    }
+}
+
 const fs = require('fs');
+const { PIX } = require('gpix/dist');
+
+function gerarCobrancaPix(valor) {
+    try {
+        const pix = PIX.static()
+            .setReceiverName('Professor Tavs')
+            .setReceiverCity('Sao Paulo')
+            .setKey('12345678900')
+            .setDescription('Reserva de horario - Aula particular')
+            .setAmount(valor);
+        
+        return pix.getBRCode();
+    } catch (error) {
+        console.error(`[BOT] ❌ Erro ao gerar código Pix: ${error.message}`);
+        return null;
+    }
+}
 
 function salvarLead(numero, mensagemInicial) {
     const leadsPath = 'leads.json';
@@ -227,6 +247,41 @@ async function connectToWhatsApp() {
         // Console.log formatado
         console.log(`[BOT] 📱 Mensagem de ${from}:`);
         console.log(`[BOT]    Conteúdo: ${messageText}`);
+        
+        const lowerText = messageText.toLowerCase();
+        
+        // Verifica solicitações de chave Pix (prioridade sobre IA)
+        if (lowerText.includes('qual a chave') || lowerText.includes('vou querer') || 
+            lowerText.includes('passa o pix') || lowerText.includes('passar o pix')) {
+            const codigoPix = gerarCobrancaPix(60);
+            
+            if (codigoPix) {
+                try {
+                    // Envia mensagem de confirmação
+                    await sock.sendMessage(from, { 
+                        text: 'Ótimo! Aqui está o código Pix para garantir o horário:' 
+                    });
+                    console.log(`[BOT]    ✅ Mensagem de confirmação enviada`);
+                    
+                    // Envia o código Pix em mensagem separada
+                    await sock.sendMessage(from, { text: codigoPix });
+                    console.log(`[BOT]    ✅ Código Pix enviado`);
+                } catch (error) {
+                    console.error(`[BOT]    ❌ Erro ao enviar código Pix: ${error.message}`);
+                }
+            } else {
+                // Envia mensagem de erro se não foi possível gerar o código
+                try {
+                    await sock.sendMessage(from, { 
+                        text: 'Desculpe, houve um erro ao gerar o código Pix. Por favor, tente novamente mais tarde ou entre em contato diretamente.' 
+                    });
+                    console.log(`[BOT]    ⚠️  Erro: não foi possível gerar código Pix`);
+                } catch (error) {
+                    console.error(`[BOT]    ❌ Erro ao enviar mensagem de erro: ${error.message}`);
+                }
+            }
+            return; // Retorna aqui para não executar o código de resposta IA abaixo
+        }
         
         // Gera resposta usando IA
         try {
