@@ -27,11 +27,16 @@ async function sendDailyReport() {
         console.log('[MARKETING] 📊 Gerando relatório diário...');
         
         // Simulação de coleta de dados
+        // TODO: Substituir por coleta real de dados
+        const MAX_LEADS = 50;
+        const MAX_CONVERSIONS = 20;
+        const MAX_MESSAGES = 100;
+        
         const report = {
             date: new Date().toLocaleDateString('pt-BR'),
-            newLeads: Math.floor(Math.random() * 50),
-            conversions: Math.floor(Math.random() * 20),
-            messages: Math.floor(Math.random() * 100)
+            newLeads: Math.floor(Math.random() * MAX_LEADS),
+            conversions: Math.floor(Math.random() * MAX_CONVERSIONS),
+            messages: Math.floor(Math.random() * MAX_MESSAGES)
         };
         
         console.log('[MARKETING] Relatório:', JSON.stringify(report, null, 2));

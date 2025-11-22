@@ -8,7 +8,7 @@ async function connectToWhatsApp() {
     
     const sock = makeWASocket({
         auth: state,
-        logger: pino({ level: 'info' }),
+        logger: pino({ level: 'silent' }),
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -25,7 +25,8 @@ async function connectToWhatsApp() {
             const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log('[BOT] Conexão fechada. Reconectando:', shouldReconnect);
             if (shouldReconnect) {
-                connectToWhatsApp();
+                // Add delay before reconnecting to avoid rapid reconnection attempts
+                setTimeout(() => connectToWhatsApp(), 3000);
             }
         } else if (connection === 'open') {
             console.log('[BOT] ✓ WhatsApp Bot conectado com sucesso!');
