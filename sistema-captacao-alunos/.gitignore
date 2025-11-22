@@ -1,11 +1,12 @@
-# Dependencies
+# WhatsApp Auth Session
+auth_info/
+auth_info_baileys/
+
+# Node modules
 node_modules/
 
 # Environment variables
 .env
-
-# WhatsApp authentication
-auth_info_baileys/
 
 # Logs
 *.log
