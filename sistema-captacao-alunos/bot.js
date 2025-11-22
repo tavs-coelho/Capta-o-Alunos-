@@ -2,6 +2,36 @@ require('dotenv').config();
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
+const fs = require('fs');
+
+function salvarLead(numero, mensagemInicial) {
+    const leadsPath = 'leads.json';
+    let leads = [];
+    
+    // Ler o arquivo leads.json, se existir
+    if (fs.existsSync(leadsPath)) {
+        const data = fs.readFileSync(leadsPath, 'utf8');
+        leads = JSON.parse(data);
+    }
+    
+    // Verificar se o número já existe
+    const leadExiste = leads.some(lead => lead.id === numero);
+    
+    if (!leadExiste) {
+        // Adicionar novo lead
+        const novoLead = {
+            id: numero,
+            data: new Date(),
+            interesse: mensagemInicial,
+            status: 'novo'
+        };
+        leads.push(novoLead);
+        
+        // Salvar o arquivo atualizado
+        fs.writeFileSync(leadsPath, JSON.stringify(leads, null, 2), 'utf8');
+        console.log(`[BOT] 💾 Novo lead salvo: ${numero}`);
+    }
+}
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -51,6 +81,9 @@ async function connectToWhatsApp() {
         
         const lowerText = messageText.toLowerCase();
         const from = msg.key.remoteJid;
+        
+        // Salvar lead quando chegar mensagem de número desconhecido
+        salvarLead(from, messageText);
         
         // Console.log formatado
         console.log(`[BOT] 📱 Mensagem de ${from}:`);
