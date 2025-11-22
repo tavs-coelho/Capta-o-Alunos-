@@ -8,8 +8,8 @@ let reconnectAttempts = 0;
 const MAX_BACKOFF_TIME = 60000; // 60 seconds maximum
 
 function getBackoffDelay() {
-    const delay = Math.min(2000 * Math.pow(2, reconnectAttempts), MAX_BACKOFF_TIME);
     reconnectAttempts++;
+    const delay = Math.min(2000 * Math.pow(2, reconnectAttempts - 1), MAX_BACKOFF_TIME);
     return delay;
 }
 
@@ -135,6 +135,8 @@ connectToWhatsApp().catch(err => {
 });
 
 // Global error handlers to prevent process termination
+// Note: These handlers intentionally do NOT call process.exit() to keep the bot running
+// even when unexpected errors occur, as per the fail-safe requirement
 process.on('uncaughtException', (error) => {
     console.error('[BOT] ❌ Uncaught Exception:', error.message);
     console.error('[BOT] Stack:', error.stack);
