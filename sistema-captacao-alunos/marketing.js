@@ -5,6 +5,12 @@ const cheerio = require('cheerio');
 
 console.log('[MARKETING] Iniciando módulo de Marketing...');
 
+// Constantes para configuração
+const EVENTS_URL = process.env.EVENTS_URL || 'https://vestibular.brasilescola.uol.com.br/enem/calendario-enem.htm';
+const DATE_REGEX = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g;
+const MIN_EVENT_NAME_LENGTH = 5;
+const MAX_EVENT_NAME_LENGTH = 100;
+
 // Calendário acadêmico com as provas programadas
 const calendarioAcademico = [
   {
@@ -29,9 +35,7 @@ async function buscarDatasReais() {
   try {
     console.log('[MARKETING] 🔍 Buscando eventos reais...');
     
-    // URL de exemplo (ENEM calendar)
-    const url = 'https://vestibular.brasilescola.uol.com.br/enem/calendario-enem.htm';
-    const response = await axios.get(url);
+    const response = await axios.get(EVENTS_URL);
     const $ = cheerio.load(response.data);
     
     const eventos = [];
@@ -46,10 +50,7 @@ async function buscarDatasReais() {
         const cells = $(row).find('td, th');
         if (cells.length >= 2) {
           const textoCompleto = $(row).text();
-          
-          // Tentar extrair datas no formato DD/MM/YYYY ou DD/MM/AA
-          const regexData = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g;
-          const matches = textoCompleto.match(regexData);
+          const matches = textoCompleto.match(DATE_REGEX);
           
           if (matches) {
             matches.forEach(dataStr => {
@@ -57,7 +58,7 @@ async function buscarDatasReais() {
               const partes = textoCompleto.split(dataStr);
               const nomeEvento = partes[0].trim();
               
-              if (nomeEvento && nomeEvento.length > 5 && nomeEvento.length < 100) {
+              if (nomeEvento && nomeEvento.length > MIN_EVENT_NAME_LENGTH && nomeEvento.length < MAX_EVENT_NAME_LENGTH) {
                 try {
                   // Converter data
                   const [dia, mes, ano] = dataStr.split(/[\/\-]/);
@@ -86,15 +87,14 @@ async function buscarDatasReais() {
     $('ul, ol').each((i, list) => {
       $(list).find('li').each((j, item) => {
         const texto = $(item).text();
-        const regexData = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g;
-        const matches = texto.match(regexData);
+        const matches = texto.match(DATE_REGEX);
         
         if (matches) {
           matches.forEach(dataStr => {
             const partes = texto.split(dataStr);
             const nomeEvento = partes[0].trim();
             
-            if (nomeEvento && nomeEvento.length > 5 && nomeEvento.length < 100) {
+            if (nomeEvento && nomeEvento.length > MIN_EVENT_NAME_LENGTH && nomeEvento.length < MAX_EVENT_NAME_LENGTH) {
               try {
                 const [dia, mes, ano] = dataStr.split(/[\/\-]/);
                 let anoCompleto = ano.length === 2 ? `20${ano}` : ano;
@@ -121,6 +121,7 @@ async function buscarDatasReais() {
     
   } catch (error) {
     console.error('[MARKETING] ✗ Erro ao buscar datas reais:', error.message);
+    console.error('[MARKETING] Stack trace:', error.stack);
     // Em caso de erro, retornar array vazio
     return [];
   }
