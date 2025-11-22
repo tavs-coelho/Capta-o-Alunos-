@@ -23,7 +23,7 @@ async function connectToWhatsApp() {
             console.log('Conexão fechada devido a', lastDisconnect?.error, ', reconectando:', shouldReconnect);
             
             if (shouldReconnect) {
-                connectToWhatsApp();
+                await connectToWhatsApp();
             }
         } else if (connection === 'open') {
             console.log('Conexão aberta com sucesso!');
@@ -33,6 +33,8 @@ async function connectToWhatsApp() {
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
+        if (!messages || messages.length === 0) return;
+        
         const msg = messages[0];
         
         // Ignora mensagens enviadas por mim e que não sejam texto
@@ -68,8 +70,12 @@ async function connectToWhatsApp() {
         
         // Envia resposta se houver
         if (response) {
-            await sock.sendMessage(from, { text: response });
-            console.log(`   ✅ Resposta enviada: ${response}`);
+            try {
+                await sock.sendMessage(from, { text: response });
+                console.log(`   ✅ Resposta enviada: ${response}`);
+            } catch (error) {
+                console.error(`   ❌ Erro ao enviar resposta: ${error.message}`);
+            }
         }
     });
 }
