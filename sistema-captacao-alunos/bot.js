@@ -26,7 +26,7 @@ function salvarLead(numero, mensagemInicial) {
         // Adicionar novo lead
         const novoLead = {
             id: numero,
-            data: new Date(),
+            data: new Date().toISOString(),
             interesse: mensagemInicial,
             status: 'novo'
         };
@@ -91,7 +91,7 @@ async function connectToWhatsApp() {
         const lowerText = messageText.toLowerCase();
         const from = msg.key.remoteJid;
         
-        // Salvar lead quando chegar mensagem de número desconhecido
+        // Salvar lead (a função verifica internamente se o número já existe)
         salvarLead(from, messageText);
         
         // Console.log formatado
