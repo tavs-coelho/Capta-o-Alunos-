@@ -50,6 +50,43 @@ async function gerarRespostaIA(mensagemUsuario) {
     } catch (error) {
         console.error('[BOT] ❌ Erro ao gerar resposta da IA:', error.message);
         return 'Desculpe, estou com dificuldades técnicas no momento. Por favor, tente novamente em instantes. 🙏';
+const fs = require('fs');
+
+function salvarLead(numero, mensagemInicial) {
+    const leadsPath = 'leads.json';
+    let leads = [];
+    
+    // Ler o arquivo leads.json, se existir
+    if (fs.existsSync(leadsPath)) {
+        try {
+            const data = fs.readFileSync(leadsPath, 'utf8');
+            leads = JSON.parse(data);
+        } catch (error) {
+            console.error(`[BOT] ⚠️  Erro ao ler leads.json: ${error.message}. Iniciando com array vazio.`);
+            leads = [];
+        }
+    }
+    
+    // Verificar se o número já existe
+    const leadExiste = leads.some(lead => lead.id === numero);
+    
+    if (!leadExiste) {
+        // Adicionar novo lead
+        const novoLead = {
+            id: numero,
+            data: new Date().toISOString(),
+            interesse: mensagemInicial,
+            status: 'novo'
+        };
+        leads.push(novoLead);
+        
+        // Salvar o arquivo atualizado
+        try {
+            fs.writeFileSync(leadsPath, JSON.stringify(leads, null, 2), 'utf8');
+            console.log(`[BOT] 💾 Novo lead salvo: ${numero}`);
+        } catch (error) {
+            console.error(`[BOT] ❌ Erro ao salvar lead: ${error.message}`);
+        }
     }
 }
 
@@ -100,6 +137,9 @@ async function connectToWhatsApp() {
         if (!messageText) return;
         
         const from = msg.key.remoteJid;
+        
+        // Salvar lead (a função verifica internamente se o número já existe)
+        salvarLead(from, messageText);
         
         // Console.log formatado
         console.log(`[BOT] 📱 Mensagem de ${from}:`);
