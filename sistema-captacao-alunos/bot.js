@@ -4,10 +4,21 @@ const pino = require('pino');
 const qrcode = require('qrcode-terminal');
 const OpenAI = require('openai');
 
+// Verifica se a API key está configurada
+if (!process.env.OPENAI_API_KEY) {
+    console.error('[BOT] ❌ Erro: OPENAI_API_KEY não configurada!');
+    console.error('[BOT] Por favor, configure a variável de ambiente OPENAI_API_KEY no arquivo .env');
+    console.error('[BOT] Exemplo: OPENAI_API_KEY=sk-sua-chave-aqui');
+    process.exit(1);
+}
+
 // Inicializa o cliente OpenAI
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
+
+// Constantes de configuração
+const PRICE_PER_HOUR = 80; // Valor em reais
 
 // Objeto global para armazenar estados dos usuários
 const userStates = {};
@@ -33,7 +44,7 @@ IMPORTANTE: Você DEVE retornar suas respostas SEMPRE no formato JSON:
 5. Se ainda não souber a matéria, mantenha o estado como "INICIO"`,
 
         'ORCAMENTO': `Neste estágio ORCAMENTO, sua missão é:
-1. Informe que o valor das aulas é R$ 80 por hora
+1. Informe que o valor das aulas é R$ ${PRICE_PER_HOUR} por hora
 2. Pergunte sobre a disponibilidade de horários do aluno
 3. Se o aluno aceitar o valor e demonstrar interesse em continuar, mude o estado para "FECHAMENTO"
 4. Se o aluno ainda tiver dúvidas sobre valor, mantenha o estado como "ORCAMENTO"`,
@@ -63,6 +74,11 @@ async function getAIResponse(userMessage, estado) {
             ],
             temperature: 0.7,
         });
+
+        // Verifica se há resposta válida
+        if (!completion.choices || completion.choices.length === 0) {
+            throw new Error('Nenhuma resposta recebida da OpenAI');
+        }
 
         const aiResponse = completion.choices[0].message.content;
         
