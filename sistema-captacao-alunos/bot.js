@@ -5,7 +5,6 @@ const qrcode = require('qrcode-terminal');
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info');
     
     const sock = makeWASocket({
         auth: state,
@@ -35,18 +34,6 @@ async function connectToWhatsApp() {
             console.log('[BOT] ✓ Conexão aberta com sucesso!');
         }
     });
-
-            console.log('Conexão fechada devido a', lastDisconnect?.error, ', reconectando:', shouldReconnect);
-            
-            if (shouldReconnect) {
-                await connectToWhatsApp();
-            }
-        } else if (connection === 'open') {
-            console.log('Conexão aberta com sucesso!');
-        }
-    });
-
-    sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('messages.upsert', async ({ messages }) => {
         if (!messages || messages.length === 0) return;
@@ -83,17 +70,6 @@ async function connectToWhatsApp() {
         else if (lowerText.includes('matemática') || lowerText.includes('matematica') || 
                  lowerText.includes('física') || lowerText.includes('fisica') || 
                  lowerText.includes('cálculo') || lowerText.includes('calculo')) {
-        console.log(`📱 Mensagem de ${from}:`);
-        console.log(`   Conteúdo: ${messageText}`);
-        
-        let response = null;
-        
-        // Verifica consultas de preço
-        if (lowerText.includes('preço') || lowerText.includes('valor') || lowerText.includes('quanto')) {
-            response = 'Olá! A hora/aula é R$ 60. Temos pacotes mensais. Qual matéria você precisa?';
-        }
-        // Verifica consultas sobre matérias
-        else if (lowerText.includes('matemática') || lowerText.includes('física') || lowerText.includes('cálculo')) {
             response = 'Eu sou especialista nisso. Você tem alguma prova chegando? Qual a data?';
         }
         // Verifica solicitações de agendamento
@@ -122,12 +98,3 @@ connectToWhatsApp().catch(err => {
 });
 
 module.exports = { connectToWhatsApp };
-                console.log(`   ✅ Resposta enviada: ${response}`);
-            } catch (error) {
-                console.error(`   ❌ Erro ao enviar resposta: ${error.message}`);
-            }
-        }
-    });
-}
-
-connectToWhatsApp();
