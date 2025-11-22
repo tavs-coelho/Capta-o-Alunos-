@@ -1,6 +1,7 @@
 require('dotenv').config();
 const cron = require('node-cron');
 const axios = require('axios');
+const cheerio = require('cheerio');
 
 console.log('[MARKETING] Iniciando módulo de Marketing...');
 
@@ -22,6 +23,108 @@ const calendarioAcademico = [
     status: 'agendada'
   }
 ];
+
+// Função para buscar datas reais de eventos acadêmicos
+async function buscarDatasReais() {
+  try {
+    console.log('[MARKETING] 🔍 Buscando eventos reais...');
+    
+    // URL de exemplo (ENEM calendar)
+    const url = 'https://vestibular.brasilescola.uol.com.br/enem/calendario-enem.htm';
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
+    
+    const eventos = [];
+    const hoje = new Date();
+    const daquiTrintaDias = new Date();
+    daquiTrintaDias.setDate(hoje.getDate() + 30);
+    
+    // Tentar encontrar tabelas ou listas que contenham datas
+    // Procurar em tabelas
+    $('table').each((i, table) => {
+      $(table).find('tr').each((j, row) => {
+        const cells = $(row).find('td, th');
+        if (cells.length >= 2) {
+          const textoCompleto = $(row).text();
+          
+          // Tentar extrair datas no formato DD/MM/YYYY ou DD/MM/AA
+          const regexData = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g;
+          const matches = textoCompleto.match(regexData);
+          
+          if (matches) {
+            matches.forEach(dataStr => {
+              // Extrair nome do evento (texto antes da data)
+              const partes = textoCompleto.split(dataStr);
+              const nomeEvento = partes[0].trim();
+              
+              if (nomeEvento && nomeEvento.length > 5 && nomeEvento.length < 100) {
+                try {
+                  // Converter data
+                  const [dia, mes, ano] = dataStr.split(/[\/\-]/);
+                  let anoCompleto = ano.length === 2 ? `20${ano}` : ano;
+                  const dataEvento = new Date(`${anoCompleto}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`);
+                  
+                  // Filtrar apenas eventos nos próximos 30 dias
+                  if (dataEvento >= hoje && dataEvento <= daquiTrintaDias) {
+                    eventos.push({
+                      nome: nomeEvento,
+                      data: dataEvento.toISOString(),
+                      dataFormatada: dataStr
+                    });
+                  }
+                } catch (e) {
+                  // Ignorar erros de conversão de data
+                }
+              }
+            });
+          }
+        }
+      });
+    });
+    
+    // Procurar em listas
+    $('ul, ol').each((i, list) => {
+      $(list).find('li').each((j, item) => {
+        const texto = $(item).text();
+        const regexData = /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/g;
+        const matches = texto.match(regexData);
+        
+        if (matches) {
+          matches.forEach(dataStr => {
+            const partes = texto.split(dataStr);
+            const nomeEvento = partes[0].trim();
+            
+            if (nomeEvento && nomeEvento.length > 5 && nomeEvento.length < 100) {
+              try {
+                const [dia, mes, ano] = dataStr.split(/[\/\-]/);
+                let anoCompleto = ano.length === 2 ? `20${ano}` : ano;
+                const dataEvento = new Date(`${anoCompleto}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`);
+                
+                if (dataEvento >= hoje && dataEvento <= daquiTrintaDias) {
+                  eventos.push({
+                    nome: nomeEvento,
+                    data: dataEvento.toISOString(),
+                    dataFormatada: dataStr
+                  });
+                }
+              } catch (e) {
+                // Ignorar erros de conversão de data
+              }
+            }
+          });
+        }
+      });
+    });
+    
+    console.log(`[MARKETING] ✓ ${eventos.length} eventos encontrados nos próximos 30 dias`);
+    return eventos;
+    
+  } catch (error) {
+    console.error('[MARKETING] ✗ Erro ao buscar datas reais:', error.message);
+    // Em caso de erro, retornar array vazio
+    return [];
+  }
+}
 
 // Função placeholder para enviar campanha para o Facebook Ads
 async function postToFacebookAds(campaignName) {
@@ -77,9 +180,19 @@ cron.schedule('*/5 * * * *', () => {
 });
 
 // Verificar provas próximas a cada 10 segundos (para fins de teste)
-cron.schedule('*/10 * * * * *', () => {
+cron.schedule('*/10 * * * * *', async () => {
   const agora = new Date().toLocaleString('pt-BR');
-  console.log(`[MARKETING] [${agora}] Verificando provas próximas...`);
+  console.log(`[MARKETING] [${agora}] Verificando eventos próximos...`);
+  
+  // Buscar eventos reais
+  const eventosReais = await buscarDatasReais();
+  
+  // Para cada evento encontrado, verificar se está próximo e exibir oportunidade
+  eventosReais.forEach(evento => {
+    console.log(`[MARKETING] 🎯 OPORTUNIDADE DE ANÚNCIO: ${evento.nome} em ${evento.dataFormatada}`);
+  });
+  
+  // Também verificar o calendário fixo (manter compatibilidade)
   verificarProvasProximas();
 });
 
@@ -128,5 +241,6 @@ module.exports = {
     sendDailyReport,
     sendMarketingCampaign,
     postToFacebookAds,
-    verificarProvasProximas
+    verificarProvasProximas,
+    buscarDatasReais
 };
