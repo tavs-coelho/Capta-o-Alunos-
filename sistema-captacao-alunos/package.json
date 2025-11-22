@@ -13,6 +13,7 @@
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
     "dotenv": "^17.2.3",
     "node-cron": "^4.2.1",
     "pino": "^10.1.0",
