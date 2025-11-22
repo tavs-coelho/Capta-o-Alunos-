@@ -10,8 +10,13 @@ function salvarLead(numero, mensagemInicial) {
     
     // Ler o arquivo leads.json, se existir
     if (fs.existsSync(leadsPath)) {
-        const data = fs.readFileSync(leadsPath, 'utf8');
-        leads = JSON.parse(data);
+        try {
+            const data = fs.readFileSync(leadsPath, 'utf8');
+            leads = JSON.parse(data);
+        } catch (error) {
+            console.error(`[BOT] ⚠️  Erro ao ler leads.json: ${error.message}. Iniciando com array vazio.`);
+            leads = [];
+        }
     }
     
     // Verificar se o número já existe
@@ -28,8 +33,12 @@ function salvarLead(numero, mensagemInicial) {
         leads.push(novoLead);
         
         // Salvar o arquivo atualizado
-        fs.writeFileSync(leadsPath, JSON.stringify(leads, null, 2), 'utf8');
-        console.log(`[BOT] 💾 Novo lead salvo: ${numero}`);
+        try {
+            fs.writeFileSync(leadsPath, JSON.stringify(leads, null, 2), 'utf8');
+            console.log(`[BOT] 💾 Novo lead salvo: ${numero}`);
+        } catch (error) {
+            console.error(`[BOT] ❌ Erro ao salvar lead: ${error.message}`);
+        }
     }
 }
 
