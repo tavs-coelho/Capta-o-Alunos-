@@ -2,6 +2,38 @@ require('dotenv').config();
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
+const OpenAI = require('openai');
+
+// Configuração da OpenAI
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
+
+// Função para gerar resposta usando IA
+async function gerarRespostaIA(mensagemUsuario, numeroUsuario) {
+    try {
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: 'Você é o assistente comercial de um professor particular de Exatas e Programação. Seu objetivo é ser simpático, entender a dor do aluno e agendar uma aula. O preço base é R$ 60/hora. Nunca dê respostas muito longas. Use emojis moderados. Se o aluno perguntar datas de provas, diga que vai verificar.'
+                },
+                {
+                    role: 'user',
+                    content: mensagemUsuario
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 200
+        });
+
+        return completion.choices[0].message.content;
+    } catch (error) {
+        console.error('[BOT] ❌ Erro ao gerar resposta da IA:', error.message);
+        return 'Desculpe, estou com dificuldades técnicas no momento. Por favor, tente novamente em instantes. 🙏';
+    }
+}
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -49,42 +81,19 @@ async function connectToWhatsApp() {
         
         if (!messageText) return;
         
-        const lowerText = messageText.toLowerCase();
         const from = msg.key.remoteJid;
         
         // Console.log formatado
         console.log(`[BOT] 📱 Mensagem de ${from}:`);
         console.log(`[BOT]    Conteúdo: ${messageText}`);
         
-        let response = null;
-        
-        // Verifica saudações
-        if (lowerText.includes('olá') || lowerText.includes('oi') || lowerText.includes('ola')) {
-            response = '👋 Olá! Bem-vindo ao sistema de captação de alunos. Como posso ajudar?';
-        }
-        // Verifica consultas de preço
-        else if (lowerText.includes('preço') || lowerText.includes('preco') || lowerText.includes('valor') || lowerText.includes('quanto')) {
-            response = 'Olá! A hora/aula é R$ 60. Temos pacotes mensais. Qual matéria você precisa?';
-        }
-        // Verifica consultas sobre matérias
-        else if (lowerText.includes('matemática') || lowerText.includes('matematica') || 
-                 lowerText.includes('física') || lowerText.includes('fisica') || 
-                 lowerText.includes('cálculo') || lowerText.includes('calculo')) {
-            response = 'Eu sou especialista nisso. Você tem alguma prova chegando? Qual a data?';
-        }
-        // Verifica solicitações de agendamento
-        else if (lowerText.includes('agendar')) {
-            response = 'Vou verificar minha agenda e te retorno em instantes.';
-        }
-        
-        // Envia resposta se houver
-        if (response) {
-            try {
-                await sock.sendMessage(from, { text: response });
-                console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
-            } catch (error) {
-                console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
-            }
+        // Gera resposta usando IA
+        try {
+            const response = await gerarRespostaIA(messageText, from);
+            await sock.sendMessage(from, { text: response });
+            console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
+        } catch (error) {
+            console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
         }
     });
 
