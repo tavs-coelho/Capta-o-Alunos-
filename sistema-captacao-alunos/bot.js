@@ -5,12 +5,18 @@ const qrcode = require('qrcode-terminal');
 const OpenAI = require('openai');
 
 // Configuração da OpenAI
+if (!process.env.OPENAI_API_KEY) {
+    console.error('[BOT] ❌ ERRO: OPENAI_API_KEY não encontrada no arquivo .env');
+    console.error('[BOT] Por favor, configure sua chave de API da OpenAI no arquivo .env');
+    process.exit(1);
+}
+
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
 // Função para gerar resposta usando IA
-async function gerarRespostaIA(mensagemUsuario, numeroUsuario) {
+async function gerarRespostaIA(mensagemUsuario) {
     try {
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
@@ -89,7 +95,7 @@ async function connectToWhatsApp() {
         
         // Gera resposta usando IA
         try {
-            const response = await gerarRespostaIA(messageText, from);
+            const response = await gerarRespostaIA(messageText);
             await sock.sendMessage(from, { text: response });
             console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
         } catch (error) {
