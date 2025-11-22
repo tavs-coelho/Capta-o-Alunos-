@@ -41,7 +41,12 @@ async function gerarRespostaIA(mensagemUsuario) {
             throw new Error('Empty response from OpenAI API');
         }
         
-        return completion.choices[0].message.content;
+        const messageContent = completion.choices[0]?.message?.content;
+        if (!messageContent) {
+            throw new Error('Invalid message content from OpenAI API');
+        }
+        
+        return messageContent;
     } catch (error) {
         console.error('[BOT] ❌ Erro ao gerar resposta da IA:', error.message);
         return 'Desculpe, estou com dificuldades técnicas no momento. Por favor, tente novamente em instantes. 🙏';

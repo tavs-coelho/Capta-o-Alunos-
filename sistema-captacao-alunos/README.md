@@ -38,7 +38,8 @@ npm install
 
 2. Configure o arquivo `.env` com sua chave de API da OpenAI:
 ```bash
-OPENAI_API_KEY=sua_chave_openai_aqui
+cp .env.example .env
+# Edite o arquivo .env e adicione sua chave da OpenAI
 ```
 
 Para obter sua chave de API:
