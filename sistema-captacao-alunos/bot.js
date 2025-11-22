@@ -15,6 +15,9 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+// Prompt do sistema para o assistente de IA
+const SYSTEM_PROMPT = 'Você é o assistente comercial de um professor particular de Exatas e Programação. Seu objetivo é ser simpático, entender a dor do aluno e agendar uma aula. O preço base é R$ 60/hora. Nunca dê respostas muito longas. Use emojis moderados. Se o aluno perguntar datas de provas, diga que vai verificar.';
+
 // Função para gerar resposta usando IA
 async function gerarRespostaIA(mensagemUsuario) {
     try {
@@ -23,7 +26,7 @@ async function gerarRespostaIA(mensagemUsuario) {
             messages: [
                 {
                     role: 'system',
-                    content: 'Você é o assistente comercial de um professor particular de Exatas e Programação. Seu objetivo é ser simpático, entender a dor do aluno e agendar uma aula. O preço base é R$ 60/hora. Nunca dê respostas muito longas. Use emojis moderados. Se o aluno perguntar datas de provas, diga que vai verificar.'
+                    content: SYSTEM_PROMPT
                 },
                 {
                     role: 'user',
@@ -35,7 +38,7 @@ async function gerarRespostaIA(mensagemUsuario) {
         });
 
         if (!completion.choices || completion.choices.length === 0) {
-            throw new Error('Resposta vazia da API OpenAI');
+            throw new Error('Empty response from OpenAI API');
         }
         
         return completion.choices[0].message.content;
