@@ -154,8 +154,18 @@ async function connectToWhatsApp() {
                 } catch (error) {
                     console.error(`[BOT]    ❌ Erro ao enviar código Pix: ${error.message}`);
                 }
-                return; // Retorna aqui para não executar o código de envio de resposta abaixo
+            } else {
+                // Envia mensagem de erro se não foi possível gerar o código
+                try {
+                    await sock.sendMessage(from, { 
+                        text: 'Desculpe, houve um erro ao gerar o código Pix. Por favor, tente novamente mais tarde ou entre em contato diretamente.' 
+                    });
+                    console.log(`[BOT]    ⚠️  Erro: não foi possível gerar código Pix`);
+                } catch (error) {
+                    console.error(`[BOT]    ❌ Erro ao enviar mensagem de erro: ${error.message}`);
+                }
             }
+            return; // Retorna aqui para não executar o código de envio de resposta abaixo
         }
         
         // Envia resposta se houver
