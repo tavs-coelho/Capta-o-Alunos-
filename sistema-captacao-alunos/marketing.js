@@ -2,6 +2,9 @@ require('dotenv').config();
 const cron = require('node-cron');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { createCanvas, loadImage } = require('canvas');
+const fs = require('fs');
+const path = require('path');
 
 console.log('[MARKETING] Iniciando módulo de Marketing...');
 
@@ -29,6 +32,79 @@ const calendarioAcademico = [
     status: 'agendada'
   }
 ];
+
+// Função para gerar banner de anúncio
+function gerarBannerAnuncio(nomeProva, dataProva) {
+  try {
+    console.log(`[MARKETING] 🎨 Gerando banner para: ${nomeProva} - ${dataProva}`);
+    
+    // Criar canvas 1080x1920 (formato Stories)
+    const width = 1080;
+    const height = 1920;
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    
+    // Pintar fundo azul escuro
+    ctx.fillStyle = '#001a33';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Configurar texto - "Atenção Alunos!" em branco
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 80px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Atenção Alunos!', width / 2, height * 0.25);
+    
+    // Texto do nome da prova em amarelo
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 65px Arial';
+    
+    // Quebrar texto se for muito longo
+    const maxWidth = width * 0.9;
+    const nomeText = nomeProva;
+    const words = nomeText.split(' ');
+    let line = '';
+    let y = height * 0.45;
+    const lineHeight = 80;
+    
+    for (let i = 0; i < words.length; i++) {
+      const testLine = line + words[i] + ' ';
+      const metrics = ctx.measureText(testLine);
+      
+      if (metrics.width > maxWidth && i > 0) {
+        ctx.fillText(line, width / 2, y);
+        line = words[i] + ' ';
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, width / 2, y);
+    
+    // Data da prova em branco
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 55px Arial';
+    ctx.fillText(`Dia ${dataProva}`, width / 2, height * 0.65);
+    
+    // Call-to-action no rodapé em amarelo
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = '45px Arial';
+    ctx.fillText('Garanta sua aula de revisão.', width / 2, height * 0.85);
+    ctx.fillText('Link na Bio.', width / 2, height * 0.90);
+    
+    // Salvar imagem na raiz do projeto
+    const outputPath = path.join(__dirname, '..', 'anuncio_gerado.png');
+    const buffer = canvas.toBuffer('image/png');
+    fs.writeFileSync(outputPath, buffer);
+    
+    console.log(`[MARKETING] ✓ Banner salvo em: ${outputPath}`);
+    return outputPath;
+    
+  } catch (error) {
+    console.error('[MARKETING] ✗ Erro ao gerar banner:', error.message);
+    throw error;
+  }
+}
 
 // Função para buscar datas reais de eventos acadêmicos
 async function buscarDatasReais() {
@@ -157,6 +233,10 @@ function verificarProvasProximas() {
     if (dataProva.getTime() === daquiTresDias.getTime()) {
       console.log(`[MARKETING] 🚀 DISPARANDO ANÚNCIO NO FACEBOOK ADS: ${prova.nome} chegando! Estude agora.`);
       
+      // Gerar banner de anúncio
+      const dataFormatada = dataProva.toLocaleDateString('pt-BR');
+      gerarBannerAnuncio(prova.nome, dataFormatada);
+      
       // Chama a função placeholder para simular envio ao Facebook Ads
       postToFacebookAds(`Campanha: ${prova.nome}`);
     }
@@ -243,5 +323,6 @@ module.exports = {
     sendMarketingCampaign,
     postToFacebookAds,
     verificarProvasProximas,
-    buscarDatasReais
+    buscarDatasReais,
+    gerarBannerAnuncio
 };
