@@ -1,8 +1,10 @@
 require('dotenv').config();
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
 const OpenAI = require('openai');
+const fs = require('fs');
+const path = require('path');
 
 // Verifica se a API key está configurada
 if (!process.env.OPENAI_API_KEY) {
@@ -116,6 +118,29 @@ const openai = new OpenAI({
 
 // Prompt do sistema para o assistente de IA
 const SYSTEM_PROMPT = 'Você é o assistente comercial de um professor particular de Exatas e Programação. Seu objetivo é ser simpático, entender a dor do aluno e agendar uma aula. O preço base é R$ 60/hora. Nunca dê respostas muito longas. Use emojis moderados. Se o aluno perguntar datas de provas, diga que vai verificar.';
+
+// Função para transcrever áudio usando OpenAI Whisper
+async function transcreverAudio(audioBuffer) {
+    try {
+        // Salvar temporariamente o áudio
+        const tempAudioPath = path.join(__dirname, 'temp_audio.ogg');
+        fs.writeFileSync(tempAudioPath, audioBuffer);
+        
+        // Enviar para OpenAI Whisper
+        const transcription = await openai.audio.transcriptions.create({
+            file: fs.createReadStream(tempAudioPath),
+            model: 'whisper-1',
+        });
+        
+        // Remover arquivo temporário
+        fs.unlinkSync(tempAudioPath);
+        
+        return transcription.text;
+    } catch (error) {
+        console.error('[BOT] ❌ Erro ao transcrever áudio:', error.message);
+        throw error;
+    }
+}
 
 // Função para gerar resposta usando IA
 async function gerarRespostaIA(mensagemUsuario) {
@@ -272,56 +297,57 @@ async function connectToWhatsApp() {
             }
         });
 
+
         sock.ev.on('messages.upsert', async ({ messages }) => {
             if (!messages || messages.length === 0) return;
             
             const msg = messages[0];
             
-            // Ignora mensagens enviadas por mim e que não sejam texto
+            // Ignora mensagens enviadas por mim
             if (!msg.message || msg.key.fromMe) return;
             
-            const messageText = msg.message.conversation || 
-                               msg.message.extendedTextMessage?.text || 
-                               '';
-            
-            if (!messageText) return;
-            
-            const lowerText = messageText.toLowerCase();
             const from = msg.key.remoteJid;
+            let messageText = '';
+            
+            // Verifica se é mensagem de áudio
+            if (msg.message.audioMessage) {
+                console.log(`[BOT] 🎤 Áudio recebido de ${from}`);
+                
+                try {
+                    // Baixa o áudio
+                    const audioBuffer = await downloadMediaMessage(msg, 'buffer', {});
+                    
+                    // Transcreve o áudio
+                    messageText = await transcreverAudio(audioBuffer);
+                    console.log(`[BOT] 📝 [Áudio Transcrito]: ${messageText}`);
+                } catch (error) {
+                    console.error(`[BOT] ❌ Erro ao processar áudio: ${error.message}`);
+                    await sock.sendMessage(from, { text: 'Desculpe, não consegui processar seu áudio. Pode enviar uma mensagem de texto?' });
+                    return;
+                }
+            } else {
+                // Processa mensagem de texto normal
+                messageText = msg.message.conversation || 
+                             msg.message.extendedTextMessage?.text || 
+                             '';
+                
+                if (!messageText) return;
+            }
+            
+            // Salvar lead (a função verifica internamente se o número já existe)
+            salvarLead(from, messageText);
             
             // Console.log formatado
             console.log(`[BOT] 📱 Mensagem de ${from}:`);
             console.log(`[BOT]    Conteúdo: ${messageText}`);
             
-            let response = null;
-            
-            // Verifica saudações
-            if (lowerText.includes('olá') || lowerText.includes('oi') || lowerText.includes('ola')) {
-                response = '👋 Olá! Bem-vindo ao sistema de captação de alunos. Como posso ajudar?';
-            }
-            // Verifica consultas de preço
-            else if (lowerText.includes('preço') || lowerText.includes('preco') || lowerText.includes('valor') || lowerText.includes('quanto')) {
-                response = 'Olá! A hora/aula é R$ 60. Temos pacotes mensais. Qual matéria você precisa?';
-            }
-            // Verifica consultas sobre matérias
-            else if (lowerText.includes('matemática') || lowerText.includes('matematica') || 
-                     lowerText.includes('física') || lowerText.includes('fisica') || 
-                     lowerText.includes('cálculo') || lowerText.includes('calculo')) {
-                response = 'Eu sou especialista nisso. Você tem alguma prova chegando? Qual a data?';
-            }
-            // Verifica solicitações de agendamento
-            else if (lowerText.includes('agendar')) {
-                response = 'Vou verificar minha agenda e te retorno em instantes.';
-            }
-            
-            // Envia resposta se houver
-            if (response) {
-                try {
-                    await sock.sendMessage(from, { text: response });
-                    console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
-                } catch (error) {
-                    console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
-                }
+            // Gera resposta usando IA
+            try {
+                const response = await gerarRespostaIA(messageText);
+                await sock.sendMessage(from, { text: response });
+                console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
+            } catch (error) {
+                console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
             }
         });
     sock.ev.on('messages.upsert', async ({ messages }) => {
