@@ -92,8 +92,10 @@ function gerarBannerAnuncio(nomeProva, dataProva) {
     ctx.fillText('Garanta sua aula de revisão.', width / 2, height * 0.85);
     ctx.fillText('Link na Bio.', width / 2, height * 0.90);
     
-    // Salvar imagem na raiz do projeto
-    const outputPath = path.join(__dirname, '..', 'anuncio_gerado.png');
+    // Salvar imagem na raiz do projeto com timestamp
+    const timestamp = new Date().getTime();
+    const filename = `anuncio_gerado_${timestamp}.png`;
+    const outputPath = path.join(__dirname, '..', filename);
     const buffer = canvas.toBuffer('image/png');
     fs.writeFileSync(outputPath, buffer);
     
@@ -102,7 +104,7 @@ function gerarBannerAnuncio(nomeProva, dataProva) {
     
   } catch (error) {
     console.error('[MARKETING] ✗ Erro ao gerar banner:', error.message);
-    throw error;
+    return null;
   }
 }
 
@@ -235,7 +237,13 @@ function verificarProvasProximas() {
       
       // Gerar banner de anúncio
       const dataFormatada = dataProva.toLocaleDateString('pt-BR');
-      gerarBannerAnuncio(prova.nome, dataFormatada);
+      const bannerPath = gerarBannerAnuncio(prova.nome, dataFormatada);
+      
+      if (bannerPath) {
+        console.log(`[MARKETING] ✓ Banner criado com sucesso para campanha`);
+      } else {
+        console.log(`[MARKETING] ⚠ Campanha continuará sem banner`);
+      }
       
       // Chama a função placeholder para simular envio ao Facebook Ads
       postToFacebookAds(`Campanha: ${prova.nome}`);
