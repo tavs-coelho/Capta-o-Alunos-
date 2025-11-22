@@ -34,6 +34,10 @@ async function gerarRespostaIA(mensagemUsuario) {
             max_tokens: 200
         });
 
+        if (!completion.choices || completion.choices.length === 0) {
+            throw new Error('Resposta vazia da API OpenAI');
+        }
+        
         return completion.choices[0].message.content;
     } catch (error) {
         console.error('[BOT] ❌ Erro ao gerar resposta da IA:', error.message);

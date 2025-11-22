@@ -319,7 +319,7 @@ OPENAI_API_KEY=sua_chave_api_openai_aqui
 
 ### Como Funciona
 
-- **Função `gerarRespostaIA(mensagemUsuario, numeroUsuario)`**: Envia mensagens do usuário para o modelo GPT-4o-mini
+- **Função `gerarRespostaIA(mensagemUsuario)`**: Envia mensagens do usuário para o modelo GPT-4o-mini
 - **System Prompt**: Define o comportamento do assistente como um vendedor simpático de aulas particulares
 - **Modelo**: gpt-4o-mini (pode ser alterado para gpt-3.5-turbo se necessário)
 - **Parâmetros**:
