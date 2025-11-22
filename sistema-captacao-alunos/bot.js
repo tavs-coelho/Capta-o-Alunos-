@@ -174,6 +174,58 @@ async function connectToWhatsApp() {
         });
 
         sock.ev.on('messages.upsert', async ({ messages }) => {
+            if (!messages || messages.length === 0) return;
+            
+            const msg = messages[0];
+            
+            // Ignora mensagens enviadas por mim e que não sejam texto
+            if (!msg.message || msg.key.fromMe) return;
+            
+            const messageText = msg.message.conversation || 
+                               msg.message.extendedTextMessage?.text || 
+                               '';
+            
+            if (!messageText) return;
+            
+            const lowerText = messageText.toLowerCase();
+            const from = msg.key.remoteJid;
+            
+            // Console.log formatado
+            console.log(`[BOT] 📱 Mensagem de ${from}:`);
+            console.log(`[BOT]    Conteúdo: ${messageText}`);
+            
+            let response = null;
+            
+            // Verifica saudações
+            if (lowerText.includes('olá') || lowerText.includes('oi') || lowerText.includes('ola')) {
+                response = '👋 Olá! Bem-vindo ao sistema de captação de alunos. Como posso ajudar?';
+            }
+            // Verifica consultas de preço
+            else if (lowerText.includes('preço') || lowerText.includes('preco') || lowerText.includes('valor') || lowerText.includes('quanto')) {
+                response = 'Olá! A hora/aula é R$ 60. Temos pacotes mensais. Qual matéria você precisa?';
+            }
+            // Verifica consultas sobre matérias
+            else if (lowerText.includes('matemática') || lowerText.includes('matematica') || 
+                     lowerText.includes('física') || lowerText.includes('fisica') || 
+                     lowerText.includes('cálculo') || lowerText.includes('calculo')) {
+                response = 'Eu sou especialista nisso. Você tem alguma prova chegando? Qual a data?';
+            }
+            // Verifica solicitações de agendamento
+            else if (lowerText.includes('agendar')) {
+                response = 'Vou verificar minha agenda e te retorno em instantes.';
+            }
+            
+            // Envia resposta se houver
+            if (response) {
+                try {
+                    await sock.sendMessage(from, { text: response });
+                    console.log(`[BOT]    ✅ Resposta enviada: ${response}`);
+                } catch (error) {
+                    console.error(`[BOT]    ❌ Erro ao enviar resposta: ${error.message}`);
+                }
+            }
+        });
+    sock.ev.on('messages.upsert', async ({ messages }) => {
         if (!messages || messages.length === 0) return;
         
         const msg = messages[0];
