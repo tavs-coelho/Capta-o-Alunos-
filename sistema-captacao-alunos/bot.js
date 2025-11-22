@@ -136,7 +136,8 @@ async function connectToWhatsApp() {
             response = 'Vou verificar minha agenda e te retorno em instantes.';
         }
         // Verifica solicitações de chave Pix
-        else if (lowerText.includes('qual a chave') || lowerText.includes('vou querer') || lowerText.includes('passa o pix')) {
+        else if (lowerText.includes('qual a chave') || lowerText.includes('vou querer') || 
+                 lowerText.includes('passa o pix') || lowerText.includes('passar o pix')) {
             const codigoPix = gerarCobrancaPix(60);
             
             if (codigoPix) {
