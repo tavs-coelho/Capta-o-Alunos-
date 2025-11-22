@@ -11,9 +11,19 @@ Sistema integrado que combina um bot de WhatsApp para atendimento automático e 
 ## 🚀 Instalação
 
 1. Instale as dependências:
-# Sistema de Captação de Alunos - Marketing Automation
+```bash
+npm install
+```
 
-Sistema automatizado de marketing para instituições de ensino, com disparo de campanhas publicitárias baseado no calendário acadêmico.
+2. Configure o arquivo `.env` com suas credenciais:
+```bash
+cp .env.example .env
+```
+
+3. Edite o arquivo `.env` e adicione sua chave da OpenAI:
+```
+OPENAI_API_KEY=sk-sua-chave-aqui
+```
 
 ## 📋 Funcionalidades
 
@@ -62,11 +72,19 @@ node index.js
 ## 📦 Módulos
 
 ### Bot de WhatsApp (`bot.js`)
+Bot inteligente de atendimento automático via WhatsApp com IA generativa.
 Bot inteligente de atendimento automático via WhatsApp com IA integrada.
 
 **Características:**
 - Conecta-se ao WhatsApp usando Baileys
 - Gera QR Code para autenticação
+- **🤖 Integração com OpenAI**: Usa GPT-3.5-turbo para respostas contextuais
+- **📊 Gerenciamento de Estados**: Acompanha o progresso de cada usuário no funil de vendas:
+  - **INICIO**: Descoberta de necessidades e identificação da matéria
+  - **ORCAMENTO**: Apresentação do valor (R$ 80/hora) e disponibilidade
+  - **FECHAMENTO**: Confirmação final e envio de dados de pagamento
+- **🧠 Respostas Inteligentes**: A IA adapta suas respostas baseadas no estado atual da conversa
+- **🔄 Transições Automáticas**: Estados mudam automaticamente conforme o progresso da conversa
 - **🤖 Respostas com IA (OpenAI GPT-4o-mini)**: 
   - Assistente comercial inteligente que entende o contexto
   - Personalidade simpática e focada em agendar aulas
@@ -227,6 +245,48 @@ Na primeira execução, será necessário:
 1. Escanear o QR Code com seu WhatsApp
 2. Os dados de autenticação serão salvos em `auth_info_baileys/`
 3. Nas próximas execuções, a conexão será automática
+
+## 🤖 Gerenciamento de Estados do Bot
+
+O bot mantém o contexto da conversa com cada usuário através de um sistema de estados:
+
+### Estados Disponíveis
+
+#### 1. INICIO (Estado Inicial)
+- **Objetivo**: Descobrir as necessidades do aluno
+- **Ações da IA**:
+  - Tira dúvidas básicas
+  - Identifica a matéria de interesse
+  - Transição: Muda para ORCAMENTO quando identificar a matéria
+
+#### 2. ORCAMENTO
+- **Objetivo**: Apresentar valores e verificar interesse
+- **Ações da IA**:
+  - Informa o valor de R$ 80/hora
+  - Pergunta sobre disponibilidade de horários
+  - Transição: Muda para FECHAMENTO quando o aluno aceitar
+
+#### 3. FECHAMENTO
+- **Objetivo**: Finalizar a venda
+- **Ações da IA**:
+  - Pede confirmação final
+  - Informa sobre envio de dados do Pix
+  - Mantém o profissionalismo até conclusão
+
+### Formato de Resposta da IA
+
+A IA retorna respostas estruturadas em JSON:
+```json
+{
+  "texto": "Mensagem para o usuário",
+  "novo_estado": "ORCAMENTO"
+}
+```
+
+Isso permite que o bot:
+- Envie a mensagem apropriada
+- Atualize automaticamente o estado da conversa
+- Mantenha contexto entre múltiplas mensagens
 
 ## 📄 Licença
 
